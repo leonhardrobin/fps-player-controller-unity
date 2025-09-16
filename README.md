@@ -1,2 +1,1 @@
-# Unity-Template
-Template Repository for Unity Projects
+# Universal First Person Player Controller for Unity
