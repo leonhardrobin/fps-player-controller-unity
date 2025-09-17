@@ -512,6 +512,17 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &104421371 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8552005843356781036, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+  m_PrefabInstance: {fileID: 6574975594947330379}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83b6ef4424cf14a4ea5ab8efe410b5a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!43 &111125140
 Mesh:
   m_ObjectHideFlags: 0
@@ -699,6 +710,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 148012928}
+  - component: {fileID: 148012929}
   m_Layer: 0
   m_Name: ControllerDebugger
   m_TagString: Untagged
@@ -721,6 +733,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &148012929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148012927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21e01550f80210d4181dbb5479ad5805, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ControllerDebugger
+  _controller: {fileID: 104421371}
 --- !u!1 &156795062
 GameObject:
   m_ObjectHideFlags: 0
@@ -18448,6 +18473,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 242983644053297923, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: _stepHeightRatio
+      value: 0.15
+      objectReference: {fileID: 0}
     - target: {fileID: 1540716311654632045, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_Name
       value: AdvancedPlayer
@@ -18503,6 +18532,14 @@ PrefabInstance:
     - target: {fileID: 6385295372811702933, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8286480618013521857, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: m_Height
+      value: 1.53
+      objectReference: {fileID: 0}
+    - target: {fileID: 8286480618013521857, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: m_Center.y
+      value: 1.01475
       objectReference: {fileID: 0}
     - target: {fileID: 8552005843356781036, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: _airControlRate
