@@ -127,7 +127,9 @@ namespace Advanced
             !_mover.IsGrounded() || Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > _slopeLimit;
 
         private Vector3 CalculateMovementVelocity() =>
-            CalculateMovementDirection() * (_movementSpeed * _currentSprintMultiplier);
+            CalculateMovementDirection() * GetMovementSpeed();
+
+        private float GetMovementSpeed() => _movementSpeed * _currentSprintMultiplier;
 
         private Vector3 CalculateMovementDirection()
         {
@@ -209,7 +211,7 @@ namespace Advanced
 
         private void AdjustHorizontalMomentum(ref Vector3 horizontalMomentum, Vector3 movementVelocity)
         {
-            if (horizontalMomentum.magnitude > _movementSpeed * _sprintMultiplier)
+            if (horizontalMomentum.magnitude > GetMovementSpeed())
             {
                 if (VectorMath.GetDotProduct(movementVelocity, horizontalMomentum.normalized) > 0f)
                 {
@@ -221,7 +223,7 @@ namespace Advanced
             else
             {
                 horizontalMomentum += movementVelocity * (Time.deltaTime * _airControlRate);
-                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, _movementSpeed * _sprintMultiplier);
+                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, GetMovementSpeed());
             }
         }
 
