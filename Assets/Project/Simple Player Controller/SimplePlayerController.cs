@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 using UnityUtils;
 using Cursor = UnityEngine.Cursor;
 
-namespace TotemGame.Player
+namespace Simple
 {
     [DisallowMultipleComponent, RequireComponent(typeof(PlayerInput), typeof(Rigidbody), typeof(CapsuleCollider))]
     public class PlayerController : MonoBehaviour

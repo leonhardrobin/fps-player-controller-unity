@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.gitamend.improvedtimers": "https://github.com/adammyhre/Unity-Improved-Timers.git",
     "com.gitamend.unityutils": "https://github.com/adammyhre/Unity-Utils.git",
     "com.kylewbanks.scenerefattribute": "https://github.com/KyleBanks/scene-ref-attribute.git",
     "com.unity.ai.navigation": "2.0.9",
@@ -14,6 +15,7 @@
     "com.unity.test-framework": "1.5.1",
     "com.unity.timeline": "1.8.9",
     "com.unity.ugui": "2.0.0",
+    "com.unity.visualscripting": "1.9.8",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
