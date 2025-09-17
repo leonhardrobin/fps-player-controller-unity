@@ -4,77 +4,77 @@ namespace Advanced
 {
     public class GroundedState : IState
     {
-        readonly PlayerController controller;
+        private readonly PlayerController _controller;
 
         public GroundedState(PlayerController controller)
         {
-            this.controller = controller;
+            _controller = controller;
         }
 
         public void OnEnter()
         {
-            controller.OnGroundContactRegained();
+            _controller.OnGroundContactRegained();
         }
     }
 
     public class FallingState : IState
     {
-        readonly PlayerController controller;
+        private readonly PlayerController _controller;
 
         public FallingState(PlayerController controller)
         {
-            this.controller = controller;
+            _controller = controller;
         }
 
         public void OnEnter()
         {
-            controller.OnFallStart();
+            _controller.OnFallStart();
         }
     }
 
     public class SlidingState : IState
     {
-        readonly PlayerController controller;
+        private readonly PlayerController _controller;
 
         public SlidingState(PlayerController controller)
         {
-            this.controller = controller;
+            _controller = controller;
         }
 
         public void OnEnter()
         {
-            controller.OnGroundContactLost();
+            _controller.OnGroundContactLost();
         }
     }
 
     public class RisingState : IState
     {
-        readonly PlayerController controller;
+        private readonly PlayerController _controller;
 
         public RisingState(PlayerController controller)
         {
-            this.controller = controller;
+            _controller = controller;
         }
 
         public void OnEnter()
         {
-            controller.OnGroundContactLost();
+            _controller.OnGroundContactLost();
         }
     }
 
     public class JumpingState : IState
     {
-        readonly PlayerController controller;
+        private readonly PlayerController _controller;
 
         public JumpingState(PlayerController controller)
         {
-            this.controller = controller;
+            _controller = controller;
         }
 
         public void OnEnter()
         {
-            controller.OnGroundContactLost();
-            controller.OnJumpStart();
+            _controller.OnGroundContactLost();
+            _controller.OnJumpStart();
         }
     }
 }

@@ -10,56 +10,39 @@ namespace Advanced
 {
     public class PlayerController : StatefulEntity
     {
-        #region Fields
-
-        private PlayerInput _input;
-
-        private Transform _tr;
-        private PlayerMover _mover;
-        private CeilingDetector _ceilingDetector;
-
-        private bool _jumpKeyIsPressed; // Tracks whether the jump key is currently being held down by the player
-
-        private bool
-            _jumpKeyWasPressed; // Indicates if the jump key was pressed since the last reset, used to detect jump initiation
-
-        private bool
-            _jumpKeyWasLetGo; // Indicates if the jump key was released since it was last pressed, used to detect when to stop jumping
-
-        private bool
-            _jumpInputIsLocked; // Prevents jump initiation when true, used to ensure only one jump action per press
-
-        [Header("Movement")]
-        public float movementSpeed = 7f;
-        public float airControlRate = 2f;
-        public float jumpSpeed = 10f;
-        public float jumpDuration = 0.2f;
-        public float airFriction = 0.5f;
-        public float groundFriction = 100f;
-        public float gravity = 30f;
-        public float slideGravity = 5f;
-        public float slopeLimit = 30f;
-        public bool useLocalMomentum;
-
-        private Vector2 Direction => _input.actions["Move"].ReadValue<Vector2>();
-        private InputAction Jump => _input.actions["Jump"];
-
-        private CountdownTimer _jumpTimer;
-
-        [SerializeField] private Transform _cameraTransform;
-        [SerializeField] private CinemachinePanTilt _cinemachinePanTilt;
-
-        private Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
-
         public event Action<Vector3> OnJump = delegate { };
         public event Action<Vector3> OnLand = delegate { };
 
-        #endregion
+        [Header("Movement")]
+        [SerializeField] private float _movementSpeed = 4f;
+        [SerializeField] private float _sprintMultiplier = 1.35f;
+        [SerializeField] private float _sprintSmoothing = 10f;
+        [SerializeField] private float _airControlRate = 5f;
+        [SerializeField] private float _jumpSpeed = 5f;
+        [SerializeField] private float _jumpDuration = 0.2f;
+        [SerializeField] private float _airFriction = 0.5f;
+        [SerializeField] private float _groundFriction = 100f;
+        [SerializeField] private float _gravity = 30f;
+        [SerializeField] private float _slideGravity = 5f;
+        [SerializeField] private float _slopeLimit = 30f;
+        [SerializeField] private bool _useLocalMomentum;
+        [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private CinemachinePanTilt _cinemachinePanTilt;
 
-        public Vector3 GetVelocity() => _savedVelocity;
-        public Vector3 GetMomentum() => useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
-        public Vector3 GetMovementVelocity() => _savedMovementVelocity;
+        private Vector2 Direction => _input.actions["Move"].ReadValue<Vector2>();
+        private InputAction Jump => _input.actions["Jump"];
+        private InputAction Sprint => _input.actions["Sprint"];
 
+        private CountdownTimer _jumpTimer;
+        private PlayerInput _input;
+        private Transform _tr;
+        private PlayerMover _mover;
+        private CeilingDetector _ceilingDetector;
+        
+        private Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
+
+        private float _currentSprintMultiplier = 1f;
+        
         protected override void Awake()
         {
             base.Awake();
@@ -69,37 +52,38 @@ namespace Advanced
             _input = GetComponent<PlayerInput>();
             _ceilingDetector = GetComponent<CeilingDetector>();
 
-            _jumpTimer = new CountdownTimer(jumpDuration);
+            _jumpTimer = new CountdownTimer(_jumpDuration);
             SetupStateMachine();
         }
 
         private void Start()
         {
-            Jump.started += (_) => HandleJumpKeyInput(true);
-            Jump.canceled += (_) => HandleJumpKeyInput(false);
-
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            HandleSprint();
         }
 
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
-            
+
             HandleRotation();
-            
+
             _mover.CheckForGround();
             HandleMomentum();
             Vector3 velocity = stateMachine.CurrentState is GroundedState ? CalculateMovementVelocity() : Vector3.zero;
-            velocity += useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
+            velocity += _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
 
             _mover.SetExtendSensorRange(IsGrounded());
             _mover.SetVelocity(velocity);
 
             _savedVelocity = velocity;
             _savedMovementVelocity = CalculateMovementVelocity();
-
-            ResetJumpKeys();
 
             if (_ceilingDetector) _ceilingDetector.Reset();
         }
@@ -115,7 +99,7 @@ namespace Advanced
             At<Func<bool>>(grounded, rising, IsRising);
             At<Func<bool>>(grounded, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             At<Func<bool>>(grounded, falling, () => !_mover.IsGrounded());
-            At<Func<bool>>(grounded, jumping, () => (_jumpKeyIsPressed || _jumpKeyWasPressed) && !_jumpInputIsLocked);
+            At<Func<bool>>(grounded, jumping, () => Jump.WasPressedThisFrame());
 
             At<Func<bool>>(falling, rising, IsRising);
             At<Func<bool>>(falling, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
@@ -128,10 +112,10 @@ namespace Advanced
             At<Func<bool>>(rising, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
             At<Func<bool>>(rising, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             At<Func<bool>>(rising, falling, IsFalling);
-            At<Func<bool>>(rising, falling, () => _ceilingDetector != null && _ceilingDetector.HitCeiling());
+            At<Func<bool>>(rising, falling, () => _ceilingDetector && _ceilingDetector.HitCeiling());
 
-            At<Func<bool>>(jumping, rising, () => _jumpTimer.IsFinished || _jumpKeyWasLetGo);
-            At<Func<bool>>(jumping, falling, () => _ceilingDetector != null && _ceilingDetector.HitCeiling());
+            At<Func<bool>>(jumping, rising, () => _jumpTimer.IsFinished);
+            At<Func<bool>>(jumping, falling, () => _ceilingDetector && _ceilingDetector.HitCeiling());
 
             stateMachine.SetState(falling);
         }
@@ -140,9 +124,10 @@ namespace Advanced
         private bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
 
         private bool IsGroundTooSteep() =>
-            !_mover.IsGrounded() || Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
+            !_mover.IsGrounded() || Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > _slopeLimit;
 
-        private Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * movementSpeed;
+        private Vector3 CalculateMovementVelocity() =>
+            CalculateMovementDirection() * (_movementSpeed * _currentSprintMultiplier);
 
         private Vector3 CalculateMovementDirection()
         {
@@ -154,14 +139,21 @@ namespace Advanced
             return direction.magnitude > 1f ? direction.normalized : direction;
         }
 
+        private void HandleSprint()
+        {
+            _currentSprintMultiplier = Sprint.IsPressed()
+                ? Mathf.Lerp(_currentSprintMultiplier, _sprintMultiplier, Time.deltaTime * _sprintSmoothing)
+                : Mathf.Lerp(_currentSprintMultiplier, 1f, Time.deltaTime * _sprintSmoothing);
+        }
+
         private void HandleMomentum()
         {
-            if (useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
 
             Vector3 verticalMomentum = VectorMath.ExtractDotVector(_momentum, _tr.up);
             Vector3 horizontalMomentum = _momentum - verticalMomentum;
 
-            verticalMomentum -= _tr.up * (gravity * Time.deltaTime);
+            verticalMomentum -= _tr.up * (_gravity * Time.deltaTime);
             if (stateMachine.CurrentState is GroundedState && VectorMath.GetDotProduct(verticalMomentum, _tr.up) < 0f)
             {
                 verticalMomentum = Vector3.zero;
@@ -177,7 +169,7 @@ namespace Advanced
                 HandleSliding(ref horizontalMomentum);
             }
 
-            float friction = stateMachine.CurrentState is GroundedState ? groundFriction : airFriction;
+            float friction = stateMachine.CurrentState is GroundedState ? _groundFriction : _airFriction;
             horizontalMomentum = Vector3.MoveTowards(horizontalMomentum, Vector3.zero, friction * Time.deltaTime);
 
             _momentum = horizontalMomentum + verticalMomentum;
@@ -196,10 +188,10 @@ namespace Advanced
                 }
 
                 Vector3 slideDirection = Vector3.ProjectOnPlane(-_tr.up, _mover.GetGroundNormal()).normalized;
-                _momentum += slideDirection * (slideGravity * Time.deltaTime);
+                _momentum += slideDirection * (_slideGravity * Time.deltaTime);
             }
 
-            if (useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
         }
 
         private void HandleRotation()
@@ -212,46 +204,24 @@ namespace Advanced
         private void HandleJumping()
         {
             _momentum = VectorMath.RemoveDotVector(_momentum, _tr.up);
-            _momentum += _tr.up * jumpSpeed;
-        }
-
-        private void HandleJumpKeyInput(bool isButtonPressed)
-        {
-            if (!_jumpKeyIsPressed && isButtonPressed)
-            {
-                _jumpKeyWasPressed = true;
-            }
-
-            if (_jumpKeyIsPressed && !isButtonPressed)
-            {
-                _jumpKeyWasLetGo = true;
-                _jumpInputIsLocked = false;
-            }
-
-            _jumpKeyIsPressed = isButtonPressed;
-        }
-
-        private void ResetJumpKeys()
-        {
-            _jumpKeyWasLetGo = false;
-            _jumpKeyWasPressed = false;
+            _momentum += _tr.up * _jumpSpeed;
         }
 
         private void AdjustHorizontalMomentum(ref Vector3 horizontalMomentum, Vector3 movementVelocity)
         {
-            if (horizontalMomentum.magnitude > movementSpeed)
+            if (horizontalMomentum.magnitude > _movementSpeed * _sprintMultiplier)
             {
                 if (VectorMath.GetDotProduct(movementVelocity, horizontalMomentum.normalized) > 0f)
                 {
                     movementVelocity = VectorMath.RemoveDotVector(movementVelocity, horizontalMomentum.normalized);
                 }
 
-                horizontalMomentum += movementVelocity * (Time.deltaTime * airControlRate * 0.25f);
+                horizontalMomentum += movementVelocity * (Time.deltaTime * _airControlRate * 0.25f);
             }
             else
             {
-                horizontalMomentum += movementVelocity * (Time.deltaTime * airControlRate);
-                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, movementSpeed);
+                horizontalMomentum += movementVelocity * (Time.deltaTime * _airControlRate);
+                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, _movementSpeed * _sprintMultiplier);
             }
         }
 
@@ -265,7 +235,7 @@ namespace Advanced
 
         public void OnGroundContactRegained()
         {
-            Vector3 collisionVelocity = useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
+            Vector3 collisionVelocity = _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
             OnLand.Invoke(collisionVelocity);
         }
 
@@ -278,7 +248,7 @@ namespace Advanced
 
         public void OnGroundContactLost()
         {
-            if (useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
 
             Vector3 velocity = GetMovementVelocity();
             if (velocity.sqrMagnitude >= 0f && _momentum.sqrMagnitude > 0f)
@@ -292,19 +262,23 @@ namespace Advanced
 
             _momentum += velocity;
 
-            if (useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
         }
 
         public void OnJumpStart()
         {
-            if (useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
 
-            _momentum += _tr.up * jumpSpeed;
+            _momentum += _tr.up * _jumpSpeed;
             _jumpTimer.Start();
-            _jumpInputIsLocked = true;
             OnJump.Invoke(_momentum);
 
-            if (useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
+            if (_useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
         }
+        
+        
+        public Vector3 GetVelocity() => _savedVelocity;
+        public Vector3 GetMomentum() => _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
+        public Vector3 GetMovementVelocity() => _savedMovementVelocity;
     }
 }

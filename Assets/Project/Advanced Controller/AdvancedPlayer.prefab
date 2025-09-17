@@ -103,9 +103,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 4
-  airControlRate: 2
+  sprintMultiplier: 1.35
+  sprintSmoothing: 10
+  airControlRate: 5
   jumpSpeed: 5
-  jumpDuration: 0.2
+  jumpDuration: 0.1
   airFriction: 0.5
   groundFriction: 100
   gravity: 30
