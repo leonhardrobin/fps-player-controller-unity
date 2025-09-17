@@ -690,71 +690,37 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!1001 &133701370
-PrefabInstance:
+--- !u!1 &148012927
+GameObject:
   m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 148012928}
+  m_Layer: 0
+  m_Name: ControllerDebugger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &148012928
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148012927}
   serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3481383832628742070, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: Target.TrackingTarget
-      value: 
-      objectReference: {fileID: 1061303010}
-    - target: {fileID: 6874506006624700974, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_Name
-      value: GitAmendPlayer
-      objectReference: {fileID: 0}
-    - target: {fileID: 6874506006624700974, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7532075561385973666, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: dd061488b9cbfe048a4b25e941006e49, type: 3}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12.28091, y: 0.0001, z: 4.96759}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &156795062
 GameObject:
   m_ObjectHideFlags: 0
@@ -10615,7 +10581,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 269918923}
+  m_Mesh: {fileID: 1280012791}
 --- !u!33 &1274544567
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -17998,7 +17964,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1280012791}
+  m_Mesh: {fileID: 1073629927}
 --- !u!33 &2068898388
 MeshFilter:
   m_ObjectHideFlags: 10
@@ -18530,6 +18496,14 @@ PrefabInstance:
       propertyPath: Target.TrackingTarget
       value: 
       objectReference: {fileID: 1061303010}
+    - target: {fileID: 6385295372811702933, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6385295372811702933, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8552005843356781036, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: _airControlRate
       value: 5
@@ -18551,5 +18525,5 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 32920348}
   - {fileID: 703176527}
-  - {fileID: 133701370}
   - {fileID: 6574975594947330379}
+  - {fileID: 148012928}
