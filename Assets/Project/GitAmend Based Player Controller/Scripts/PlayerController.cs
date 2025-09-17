@@ -1,5 +1,6 @@
 ﻿using System;
 using ImprovedTimers;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityUtils;
@@ -46,14 +47,12 @@ namespace GitAmend
         private CountdownTimer _jumpTimer;
 
         [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private CinemachinePanTilt _cinemachinePanTilt;
 
         private Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
 
         public event Action<Vector3> OnJump = delegate { };
         public event Action<Vector3> OnLand = delegate { };
-
-        private float _cameraXRotation;
-        private float _cameraYRotation;
 
         #endregion
 
@@ -83,15 +82,12 @@ namespace GitAmend
             Cursor.lockState = CursorLockMode.Locked;
         }
 
-        protected override void Update()
-        {
-            base.Update();
-            HandleRotation();
-        }
-
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
+            
+            HandleRotation();
+            
             _mover.CheckForGround();
             HandleMomentum();
             Vector3 velocity = stateMachine.CurrentState is GroundedState ? CalculateMovementVelocity() : Vector3.zero;
@@ -208,14 +204,14 @@ namespace GitAmend
 
         private void HandleRotation()
         {
-            _mover.SetRotation(y: _cameraYRotation);
+            _mover.SetRotation(y: _cinemachinePanTilt.PanAxis.Value);
         }
 
         private bool IsGrounded() => stateMachine.CurrentState is GroundedState or SlidingState;
 
         private void HandleJumping()
         {
-            _momentum = UnityUtils.VectorMath.RemoveDotVector(_momentum, _tr.up);
+            _momentum = VectorMath.RemoveDotVector(_momentum, _tr.up);
             _momentum += _tr.up * jumpSpeed;
         }
 
