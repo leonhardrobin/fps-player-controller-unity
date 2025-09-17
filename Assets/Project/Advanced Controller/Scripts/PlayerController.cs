@@ -146,7 +146,7 @@ namespace Advanced
 
         private Vector3 CalculateMovementDirection()
         {
-            Vector3 direction = _cameraTransform == null
+            Vector3 direction = !_cameraTransform
                 ? _tr.right * Direction.x + _tr.forward * Direction.y
                 : Vector3.ProjectOnPlane(_cameraTransform.right, _tr.up).normalized * Direction.x +
                   Vector3.ProjectOnPlane(_cameraTransform.forward, _tr.up).normalized * Direction.y;

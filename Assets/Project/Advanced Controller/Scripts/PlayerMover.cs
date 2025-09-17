@@ -8,8 +8,8 @@ namespace Advanced
         #region Fields
 
         [Header("Collider Settings:")]
-        [Range(0f, 1f)] [SerializeField] private float _stepHeightRatio = 0.1f;
-
+        [Range(0f, 1f), SerializeField] private float _stepHeightRatio = 0.1f;
+        [SerializeField] private float _groundAdjustmentVelocityMultiplier = 0.5f;
         [SerializeField] private float _colliderHeight = 2f;
         [SerializeField] private float _colliderThickness = 1f;
         [SerializeField] private Vector3 _colliderOffset = Vector3.zero;
@@ -70,7 +70,8 @@ namespace Advanced
             float middle = upperLimit + _colliderHeight * _tr.localScale.x * _stepHeightRatio;
             float distanceToGo = middle - distance;
 
-            _currentGroundAdjustmentVelocity = _tr.up * (distanceToGo / Time.fixedDeltaTime);
+            _currentGroundAdjustmentVelocity =
+                _tr.up * ((distanceToGo / Time.fixedDeltaTime) * _groundAdjustmentVelocityMultiplier);
         }
 
         public bool IsGrounded() => _isGrounded;

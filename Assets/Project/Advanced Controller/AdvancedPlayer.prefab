@@ -86,10 +86,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1.8
+  m_Radius: 0.3
+  m_Height: 1.62
   m_Direction: 1
-  m_Center: {x: 0, y: 1.09, z: 0}
+  m_Center: {x: 0, y: 0.98099995, z: 0}
 --- !u!114 &8552005843356781036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -127,8 +127,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stepHeightRatio: 0.1
-  _colliderHeight: 2
-  _colliderThickness: 1
+  _groundAdjustmentVelocityMultiplier: 0.25
+  _colliderHeight: 1.8
+  _colliderThickness: 0.6
   _colliderOffset: {x: 0, y: 0.5, z: 0}
   _isInDebugMode: 1
 --- !u!114 &4505866951080404938
