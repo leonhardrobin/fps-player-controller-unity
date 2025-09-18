@@ -54,12 +54,23 @@ public class PlayerController : StatefulEntity
 
         _jumpTimer = new CountdownTimer(_jumpDuration);
         SetupStateMachine();
+        
+        Crouch.started += HandleCrouch;
+        Crouch.canceled += HandleCrouch;
     }
 
     private void Start()
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+    }
+    
+    private void OnDisable()
+    {
+        if (!_input) return;
+
+        Crouch.started -= HandleCrouch;
+        Crouch.canceled -= HandleCrouch;
     }
 
     protected override void Update()
@@ -97,20 +108,20 @@ public class PlayerController : StatefulEntity
         JumpingState jumping = new(this);
 
         At<Func<bool>>(grounded, rising, IsRising);
-        At<Func<bool>>(grounded, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
-        At<Func<bool>>(grounded, falling, () => !_mover.IsGrounded());
+        At<Func<bool>>(grounded, sliding, () => _mover.IsGrounded && IsGroundTooSteep());
+        At<Func<bool>>(grounded, falling, () => !_mover.IsGrounded);
         At<Func<bool>>(grounded, jumping, () => Jump.WasPressedThisFrame());
 
         At<Func<bool>>(falling, rising, IsRising);
-        At<Func<bool>>(falling, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
-        At<Func<bool>>(falling, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
+        At<Func<bool>>(falling, grounded, () => _mover.IsGrounded && !IsGroundTooSteep());
+        At<Func<bool>>(falling, sliding, () => _mover.IsGrounded && IsGroundTooSteep());
 
         At<Func<bool>>(sliding, rising, IsRising);
-        At<Func<bool>>(sliding, falling, () => !_mover.IsGrounded());
-        At<Func<bool>>(sliding, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
+        At<Func<bool>>(sliding, falling, () => !_mover.IsGrounded);
+        At<Func<bool>>(sliding, grounded, () => _mover.IsGrounded && !IsGroundTooSteep());
 
-        At<Func<bool>>(rising, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
-        At<Func<bool>>(rising, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
+        At<Func<bool>>(rising, grounded, () => _mover.IsGrounded && !IsGroundTooSteep());
+        At<Func<bool>>(rising, sliding, () => _mover.IsGrounded && IsGroundTooSteep());
         At<Func<bool>>(rising, falling, IsFalling);
         At<Func<bool>>(rising, falling, () => _ceilingDetector && _ceilingDetector.HitCeiling());
 
@@ -124,7 +135,7 @@ public class PlayerController : StatefulEntity
     private bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
 
     private bool IsGroundTooSteep() =>
-        !_mover.IsGrounded() || Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > _slopeLimit;
+        !_mover.IsGrounded || Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > _slopeLimit;
 
     private Vector3 CalculateMovementVelocity() =>
         CalculateMovementDirection() * (_movementSpeed * _currentSprintMultiplier);
@@ -144,6 +155,12 @@ public class PlayerController : StatefulEntity
         _currentSprintMultiplier = Sprint.IsPressed()
             ? Mathf.Lerp(_currentSprintMultiplier, _sprintMultiplier, Time.deltaTime * _sprintSmoothing)
             : Mathf.Lerp(_currentSprintMultiplier, 1f, Time.deltaTime * _sprintSmoothing);
+    }
+    
+    private void HandleCrouch(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+        _mover.Crouch();
     }
 
     private void HandleMomentum()
@@ -280,4 +297,5 @@ public class PlayerController : StatefulEntity
     public Vector3 GetVelocity() => _savedVelocity;
     public Vector3 GetMomentum() => _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
     public Vector3 GetMovementVelocity() => _savedMovementVelocity;
+    public IState GetState() => stateMachine.CurrentState;
 }

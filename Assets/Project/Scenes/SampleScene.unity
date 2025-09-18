@@ -11896,6 +11896,33 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!114 &1324931565 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7076204396587462924, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+  m_PrefabInstance: {fileID: 6574975594947330379}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62d54399b04b4fa48a73e121d4937dd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachinePanTilt
+--- !u!114 &1324931567 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2694969793589396509, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+  m_PrefabInstance: {fileID: 6574975594947330379}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
+--- !u!4 &1324931568 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7193757410777035147, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+  m_PrefabInstance: {fileID: 6574975594947330379}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1358140317
 GameObject:
   m_ObjectHideFlags: 0
@@ -18477,9 +18504,29 @@ PrefabInstance:
       propertyPath: _stepHeightRatio
       value: 0.15
       objectReference: {fileID: 0}
+    - target: {fileID: 242983644053297923, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: _cameraReferences.cameraTransform
+      value: 
+      objectReference: {fileID: 1324931568}
+    - target: {fileID: 242983644053297923, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: _cameraReferences.cinemachineCamera
+      value: 
+      objectReference: {fileID: 1324931567}
+    - target: {fileID: 242983644053297923, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: _cameraReferences.cinemachinePanTilt
+      value: 
+      objectReference: {fileID: 1324931565}
+    - target: {fileID: 242983644053297923, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: _movementSettings.crouchHeightPercentage
+      value: 0.75
+      objectReference: {fileID: 0}
     - target: {fileID: 1540716311654632045, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_Name
       value: AdvancedPlayer
+      objectReference: {fileID: 0}
+    - target: {fileID: 1540716311654632045, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 2613380094263931395, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18525,6 +18572,10 @@ PrefabInstance:
       propertyPath: Target.TrackingTarget
       value: 
       objectReference: {fileID: 1061303010}
+    - target: {fileID: 4505866951080404938, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: isInDebugMode
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6385295372811702933, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -18533,13 +18584,21 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7076204396587462924, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: TiltAxis.Range.x
+      value: -85
+      objectReference: {fileID: 0}
+    - target: {fileID: 7076204396587462924, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
+      propertyPath: TiltAxis.Range.y
+      value: 85
+      objectReference: {fileID: 0}
     - target: {fileID: 8286480618013521857, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_Height
-      value: 1.53
+      value: 1.8
       objectReference: {fileID: 0}
     - target: {fileID: 8286480618013521857, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: m_Center.y
-      value: 1.01475
+      value: 0.9
       objectReference: {fileID: 0}
     - target: {fileID: 8552005843356781036, guid: 752708cc2a3cd23458973d52b2ff175f, type: 3}
       propertyPath: _airControlRate

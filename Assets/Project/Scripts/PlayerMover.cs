@@ -1,10 +1,12 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections;
+using Unity.Cinemachine;
+using UnityEngine;
+using UnityUtils;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PlayerMover : MonoBehaviour
 {
-    #region Fields
-
     [Header("Collider Settings:")]
     [Range(0f, 1f), SerializeField] private float _stepHeightRatio = 0.1f;
     [SerializeField] private float _groundAdjustmentVelocityMultiplier = 0.5f;
@@ -12,76 +14,59 @@ public class PlayerMover : MonoBehaviour
     [SerializeField] private float _colliderThickness = 1f;
     [SerializeField] private Vector3 _colliderOffset = Vector3.zero;
 
+    [Header("Sensor Settings:")]
+    [SerializeField] private bool _isInDebugMode;
+    
     private Rigidbody _rb;
     private Transform _tr;
     private CapsuleCollider _col;
     private RaycastSensor _sensor;
+    
+    public bool IsCrouching { get; private set; }
+    public bool IsGrounded { get; private set; }
 
-    private bool _isGrounded;
     private float _baseSensorRange;
-    private Vector3
-        _currentGroundAdjustmentVelocity; // Velocity to adjust player position to maintain ground contact
+    private Vector3 _currentGroundAdjustmentVelocity; // Velocity to adjust player position to maintain ground contact
     private int _currentLayer;
+    private bool _isUsingExtendedSensorRange = true;
+    
+    [Serializable]
+    public class MovementSettings
+    {
+        public float crouchHeightPercentage = .5f;
+    }
+    
+    [Serializable]
+    public class CameraReferences
+    {
+        public CinemachineCamera cinemachineCamera;
+    }
+    
+    [Serializable]
+    public class AdvancedSettings
+    {
+        [Header("Crouching")]
+        public float crouchSmoothTime = 0.1f;
+        public float standUpCheckRadiusMultiplier = 0.9f;
+        public bool moveCameraOnCrouch = true;
+    }
+    
+    [SerializeField] private MovementSettings _movementSettings = new();
+    [SerializeField] private CameraReferences _cameraReferences = new();
+    [SerializeField] private AdvancedSettings _advancedSettings = new();
 
-    [Header("Sensor Settings:")]
-    [SerializeField] private bool _isInDebugMode;
-
-    private bool _isUsingExtendedSensorRange = true; // Use extended range for smoother ground transitions
-
-    #endregion
+    private float _standingColliderHeight;
+    private float _crouchHeightVelocity;
+    private Vector3 _crouchCenterVelocity;
+    private float _standingCameraHeight;
+    private float _cameraHeightVelocity;
+    
+    private Coroutine _crouchTransition;
 
     private void Awake()
     {
         Setup();
         RecalculateColliderDimensions();
-    }
-
-    private void OnValidate()
-    {
-        if (gameObject.activeInHierarchy)
-        {
-            RecalculateColliderDimensions();
-        }
-    }
-
-    public void CheckForGround()
-    {
-        if (_currentLayer != gameObject.layer)
-        {
-            RecalculateSensorLayerMask();
-        }
-
-        _currentGroundAdjustmentVelocity = Vector3.zero;
-        _sensor.castLength = _isUsingExtendedSensorRange
-            ? _baseSensorRange + _colliderHeight * _tr.localScale.x * _stepHeightRatio
-            : _baseSensorRange;
-        _sensor.Cast();
-
-        _isGrounded = _sensor.HasDetectedHit();
-        if (!_isGrounded) return;
-
-        float distance = _sensor.GetDistance();
-        float upperLimit = _colliderHeight * _tr.localScale.x * (1f - _stepHeightRatio) * 0.5f;
-        float middle = upperLimit + _colliderHeight * _tr.localScale.x * _stepHeightRatio;
-        float distanceToGo = middle - distance;
-
-        _currentGroundAdjustmentVelocity =
-            _tr.up * ((distanceToGo / Time.fixedDeltaTime) * _groundAdjustmentVelocityMultiplier);
-    }
-
-    public bool IsGrounded() => _isGrounded;
-    public Vector3 GetGroundNormal() => _sensor.GetNormal();
-
-    public void SetVelocity(Vector3 velocity) => _rb.linearVelocity = velocity + _currentGroundAdjustmentVelocity;
-    public void SetExtendSensorRange(bool isExtended) => _isUsingExtendedSensorRange = isExtended;
-
-    public void SetRotation(float x = 0, float y = 0, float z = 0)
-    {
-        x = x == 0 ? _rb.rotation.eulerAngles.x : x;
-        y = y == 0 ? _rb.rotation.eulerAngles.y : y;
-        z = z == 0 ? _rb.rotation.eulerAngles.z : z;
-
-        _rb.MoveRotation(Quaternion.Euler(x, y, z));
     }
 
     private void Setup()
@@ -92,7 +77,11 @@ public class PlayerMover : MonoBehaviour
 
         _rb.freezeRotation = true;
         _rb.useGravity = false;
+        
+        _standingCameraHeight = _cameraReferences.cinemachineCamera.transform.localPosition.y;
+        _standingColliderHeight = _col.height;
     }
+
 
     private void RecalculateSensorLayerMask()
     {
@@ -131,11 +120,6 @@ public class PlayerMover : MonoBehaviour
 
     private void RecalculateColliderDimensions()
     {
-        if (!_col)
-        {
-            Setup();
-        }
-
         _col.height = _colliderHeight * (1f - _stepHeightRatio);
         _col.radius = _colliderThickness / 2f;
         _col.center = _colliderOffset * _colliderHeight + new Vector3(0f, _stepHeightRatio * _col.height / 2f, 0f);
@@ -146,5 +130,76 @@ public class PlayerMover : MonoBehaviour
         }
 
         RecalibrateSensor();
+    }
+
+    public void Crouch()
+    {
+        IsCrouching = !IsCrouching;
+        
+        float crouchHeight = _standingColliderHeight * _movementSettings.crouchHeightPercentage;
+        _colliderHeight = IsCrouching ? crouchHeight : _standingColliderHeight;
+        RecalculateColliderDimensions();
+
+        if (!_advancedSettings.moveCameraOnCrouch) return;
+        if (_crouchTransition != null) StopCoroutine(_crouchTransition);
+        _crouchTransition = StartCoroutine(CrouchCameraTransition(IsCrouching));
+    }
+    
+    private IEnumerator CrouchCameraTransition(bool crouch)
+    {
+        float crouchCameraHeight = _standingCameraHeight * _movementSettings.crouchHeightPercentage;
+        float targetCameraHeight = crouch ? crouchCameraHeight : _standingCameraHeight;
+        
+        while (Math.Abs(_col.height - _colliderHeight) > 0.01f)
+        {
+            float y = Mathf.SmoothDamp(
+                _cameraReferences.cinemachineCamera.transform.localPosition.y, targetCameraHeight,
+                ref _cameraHeightVelocity, _advancedSettings.crouchSmoothTime,
+                Mathf.Infinity, Time.fixedDeltaTime);
+
+            _cameraReferences.cinemachineCamera.transform.localPosition =
+                _cameraReferences.cinemachineCamera.transform.localPosition.With(y: y);
+
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    public void CheckForGround()
+    {
+        if (_currentLayer != gameObject.layer)
+        {
+            RecalculateSensorLayerMask();
+        }
+
+        _currentGroundAdjustmentVelocity = Vector3.zero;
+        _sensor.castLength = _isUsingExtendedSensorRange
+            ? _baseSensorRange + _colliderHeight * _tr.localScale.x * _stepHeightRatio
+            : _baseSensorRange;
+        _sensor.Cast();
+
+        IsGrounded = _sensor.HasDetectedHit();
+        if (!IsGrounded) return;
+
+        float distance = _sensor.GetDistance();
+        float upperLimit = _colliderHeight * _tr.localScale.x * (1f - _stepHeightRatio) * 0.5f;
+        float middle = upperLimit + _colliderHeight * _tr.localScale.x * _stepHeightRatio;
+        float distanceToGo = middle - distance;
+
+        _currentGroundAdjustmentVelocity =
+            _tr.up * ((distanceToGo / Time.fixedDeltaTime) * _groundAdjustmentVelocityMultiplier);
+    }
+    
+    public Vector3 GetGroundNormal() => _sensor.GetNormal();
+
+    public void SetVelocity(Vector3 velocity) => _rb.linearVelocity = velocity + _currentGroundAdjustmentVelocity;
+    public void SetExtendSensorRange(bool isExtended) => _isUsingExtendedSensorRange = isExtended;
+
+    public void SetRotation(float x = 0, float y = 0, float z = 0)
+    {
+        x = x == 0 ? _rb.rotation.eulerAngles.x : x;
+        y = y == 0 ? _rb.rotation.eulerAngles.y : y;
+        z = z == 0 ? _rb.rotation.eulerAngles.z : z;
+
+        _rb.MoveRotation(Quaternion.Euler(x, y, z));
     }
 }

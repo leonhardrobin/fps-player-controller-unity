@@ -4,7 +4,7 @@ public class CeilingDetector : MonoBehaviour
 {
     public float ceilingAngleLimit = 10f;
     public bool isInDebugMode;
-    private float _debugDrawDuration = 2.0f;
+    private const float _DEBUG_DRAW_DURATION = 2.0f;
     private bool _ceilingWasHit;
 
     private void OnCollisionEnter(Collision collision) => CheckForContact(collision);
@@ -23,7 +23,7 @@ public class CeilingDetector : MonoBehaviour
 
         if (isInDebugMode)
         {
-            Debug.DrawRay(collision.contacts[0].point, collision.contacts[0].normal, Color.red, _debugDrawDuration);
+            Debug.DrawRay(collision.contacts[0].point, collision.contacts[0].normal, Color.red, _DEBUG_DRAW_DURATION);
         }
     }
 
