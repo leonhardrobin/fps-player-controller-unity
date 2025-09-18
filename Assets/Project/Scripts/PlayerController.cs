@@ -10,8 +10,9 @@ using UnityUtils.StateMachine;
 
 public class PlayerController : StatefulEntity
 {
-    public event Action<Vector3> OnJump = delegate { };
-    public event Action<Vector3> OnLand = delegate { };
+    public event Action<Vector2, bool> OnMove;
+    public event Action<Vector3> OnJump;
+    public event Action<Vector3> OnLand;
 
     [Header("Movement")]
     [SerializeField, Self] private PlayerInput _input;
@@ -22,7 +23,8 @@ public class PlayerController : StatefulEntity
     [SerializeField, Child] private CinemachinePanTilt _cinemachinePanTilt;
     [SerializeField] private float _movementSpeed = 4f;
     [SerializeField] private float _sprintMultiplier = 1.35f;
-    [SerializeField] private float _sprintSmoothing = 10f;
+    [SerializeField] private float _crouchMultiplier = 0.75f;
+    [SerializeField] private float _multiplierSmoothing = 10f;
     [SerializeField] private float _airControlRate = 5f;
     [SerializeField] private float _jumpSpeed = 5f;
     [SerializeField] private float _jumpDuration = 0.2f;
@@ -37,11 +39,16 @@ public class PlayerController : StatefulEntity
     private InputAction Jump => _input.actions["Jump"];
     private InputAction Sprint => _input.actions["Sprint"];
     private InputAction Crouch => _input.actions["Crouch"];
-    
+
     private Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
     private float _currentSprintMultiplier = 1f;
-    
+    private bool _enableSprinting = true;
+    private bool _enableCrouching = true;
+    private float _cachedMovementSpeed;
+
     private CountdownTimer _jumpTimer;
+
+    public bool IsSprinting { get; private set; }
 
     private void OnValidate() => this.ValidateRefs();
 
@@ -51,9 +58,11 @@ public class PlayerController : StatefulEntity
 
         _jumpTimer = new CountdownTimer(_jumpDuration);
         SetupStateMachine();
-        
+
         Crouch.started += HandleCrouch;
         Crouch.canceled += HandleCrouch;
+
+        _cachedMovementSpeed = _movementSpeed;
     }
 
     private void Start()
@@ -61,7 +70,7 @@ public class PlayerController : StatefulEntity
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
-    
+
     private void OnDisable()
     {
         if (!_input) return;
@@ -69,7 +78,7 @@ public class PlayerController : StatefulEntity
         Crouch.started -= HandleCrouch;
         Crouch.canceled -= HandleCrouch;
     }
-    
+
     private void OnCollisionEnter(Collision collision) => HandleFallingCollision(collision);
 
     private void OnCollisionStay(Collision collision) => HandleFallingCollision(collision);
@@ -77,7 +86,7 @@ public class PlayerController : StatefulEntity
     protected override void Update()
     {
         base.Update();
-        HandleSprint();
+        HandleSpeedMultiplier();
     }
 
     protected override void FixedUpdate()
@@ -91,6 +100,8 @@ public class PlayerController : StatefulEntity
         Vector3 velocity = stateMachine.CurrentState is GroundedState ? CalculateMovementVelocity() : Vector3.zero;
         velocity += _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
 
+        OnMove?.Invoke(Direction, IsSprinting);
+        
         _mover.SetExtendSensorRange(IsGrounded());
         _mover.SetVelocity(velocity);
 
@@ -151,23 +162,35 @@ public class PlayerController : StatefulEntity
         return direction.magnitude > 1f ? direction.normalized : direction;
     }
 
-    private void HandleSprint()
+    private void HandleSpeedMultiplier()
     {
-        _currentSprintMultiplier = Sprint.IsPressed()
-            ? Mathf.Lerp(_currentSprintMultiplier, _sprintMultiplier, Time.deltaTime * _sprintSmoothing)
-            : Mathf.Lerp(_currentSprintMultiplier, 1f, Time.deltaTime * _sprintSmoothing);
+        if (_enableCrouching && _mover.IsCrouching)
+        {
+            _currentSprintMultiplier = Mathf.Lerp(_currentSprintMultiplier, _crouchMultiplier, Time.deltaTime * _multiplierSmoothing);
+        }
+        else if (_enableSprinting && Sprint.IsPressed())
+        {
+            _currentSprintMultiplier = Mathf.Lerp(_currentSprintMultiplier, _sprintMultiplier, Time.deltaTime * _multiplierSmoothing);
+        }
+        else
+        {
+            _currentSprintMultiplier = Mathf.Lerp(_currentSprintMultiplier, 1f, Time.deltaTime * _multiplierSmoothing);
+        }
+
+        IsSprinting = _currentSprintMultiplier > 1 && _mover.IsMoving;
     }
-    
+
     private void HandleCrouch(InputAction.CallbackContext context)
     {
         if (!context.started) return;
         _mover.ToggleCrouch();
     }
+
     private void HandleFallingCollision(Collision collision)
     {
         if (stateMachine.CurrentState is not FallingState) return;
         if (!Mathf.Approximately(VectorMath.ExtractDotVector(_momentum, _tr.up).magnitude, 0f)) return;
-            
+
         _mover.KeepWallDistance(collision);
     }
 
@@ -261,7 +284,7 @@ public class PlayerController : StatefulEntity
     public void OnGroundContactRegained()
     {
         Vector3 collisionVelocity = _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
-        OnLand.Invoke(collisionVelocity);
+        OnLand?.Invoke(collisionVelocity);
     }
 
     public void OnFallStart()
@@ -296,14 +319,25 @@ public class PlayerController : StatefulEntity
 
         _momentum += _tr.up * _jumpSpeed;
         _jumpTimer.Start();
-        OnJump.Invoke(_momentum);
+        OnJump?.Invoke(_momentum);
 
         if (_useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
     }
 
 
     public Vector3 GetVelocity() => _savedVelocity;
+    
     public Vector3 GetMomentum() => _useLocalMomentum ? _tr.localToWorldMatrix * _momentum : _momentum;
+    
     public Vector3 GetMovementVelocity() => _savedMovementVelocity;
+    
     public IState GetState() => stateMachine.CurrentState;
+    
+    public void SetTemporaryMovementSpeedMultiplier(float multiplier) => _movementSpeed *= multiplier;
+
+    public void ResetTemporaryMovementSpeed() => _movementSpeed = _cachedMovementSpeed;
+    
+    public void EnableSprinting(bool enable) => _enableSprinting = enable;
+
+    public void EnableCrouching(bool enable) => _enableCrouching = enable;
 }

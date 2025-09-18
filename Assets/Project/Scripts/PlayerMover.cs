@@ -8,6 +8,9 @@ using UnityUtils;
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class PlayerMover : ValidatedMonoBehaviour
 {
+    public event Action<Vector2, bool> OnMove;
+    public event Action<bool> OnCrouchChange;
+    
     [SerializeField, Self] private Rigidbody _rb;
     [SerializeField, Self] private Transform _tr;
     [SerializeField, Self] private CapsuleCollider _col;
@@ -22,8 +25,7 @@ public class PlayerMover : ValidatedMonoBehaviour
     [SerializeField] private float _standUpCheckRadiusMultiplier = 0.9f;
     [SerializeField] private bool _moveCameraOnCrouch = true;
     
-    private RaycastSensor _sensor;
-    
+    public bool IsMoving { get; private set; }
     public bool IsCrouching { get; private set; }
     public bool IsGrounded { get; private set; }
 
@@ -37,6 +39,7 @@ public class PlayerMover : ValidatedMonoBehaviour
     private float _standingCameraHeight;
     private float _cameraHeightVelocity;
     
+    private RaycastSensor _sensor;
     private Coroutine _crouchTransition;
 
     private void Awake()
@@ -114,10 +117,12 @@ public class PlayerMover : ValidatedMonoBehaviour
         if (IsCrouching && !CanStand()) return;
         
         IsCrouching = !IsCrouching;
+        OnCrouchChange?.Invoke(IsCrouching);
         
         float crouchHeight = _standingColliderHeight * _crouchHeightPercentage;
         _colliderHeight = IsCrouching ? crouchHeight : _standingColliderHeight;
         RecalculateColliderDimensions();
+        
 
         if (!_moveCameraOnCrouch) return;
         if (_crouchTransition != null) StopCoroutine(_crouchTransition);
