@@ -165,10 +165,10 @@ public class PlayerController : StatefulEntity
     }
     private void HandleFallingCollision(Collision collision)
     {
-        if (stateMachine.CurrentState is FallingState)
-        {
-            _mover.KeepWallDistance(collision);
-        }
+        if (stateMachine.CurrentState is not FallingState) return;
+        if (!Mathf.Approximately(VectorMath.ExtractDotVector(_momentum, _tr.up).magnitude, 0f)) return;
+            
+        _mover.KeepWallDistance(collision);
     }
 
     private void HandleMomentum()
