@@ -160,7 +160,7 @@ public class PlayerController : StatefulEntity
     private void HandleCrouch(InputAction.CallbackContext context)
     {
         if (!context.started) return;
-        _mover.Crouch();
+        _mover.ToggleCrouch();
     }
 
     private void HandleMomentum()

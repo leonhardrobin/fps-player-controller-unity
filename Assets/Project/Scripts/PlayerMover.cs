@@ -1,25 +1,27 @@
 ﻿using System;
 using System.Collections;
+using KBCore.Refs;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityUtils;
 
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
-public class PlayerMover : MonoBehaviour
+public class PlayerMover : ValidatedMonoBehaviour
 {
-    [Header("Collider Settings:")]
+    [SerializeField, Self] private Rigidbody _rb;
+    [SerializeField, Self] private Transform _tr;
+    [SerializeField, Self] private CapsuleCollider _col;
+    [SerializeField, Child] private CinemachineCamera _cinemachineCamera;
     [Range(0f, 1f), SerializeField] private float _stepHeightRatio = 0.1f;
     [SerializeField] private float _groundAdjustmentVelocityMultiplier = 0.5f;
     [SerializeField] private float _colliderHeight = 2f;
     [SerializeField] private float _colliderThickness = 1f;
     [SerializeField] private Vector3 _colliderOffset = Vector3.zero;
-
-    [Header("Sensor Settings:")]
-    [SerializeField] private bool _isInDebugMode;
+    [SerializeField] private float _crouchHeightPercentage = .75f;
+    [SerializeField] private float _crouchSmoothTime = 0.1f;
+    [SerializeField] private float _standUpCheckRadiusMultiplier = 0.9f;
+    [SerializeField] private bool _moveCameraOnCrouch = true;
     
-    private Rigidbody _rb;
-    private Transform _tr;
-    private CapsuleCollider _col;
     private RaycastSensor _sensor;
     
     public bool IsCrouching { get; private set; }
@@ -29,32 +31,6 @@ public class PlayerMover : MonoBehaviour
     private Vector3 _currentGroundAdjustmentVelocity; // Velocity to adjust player position to maintain ground contact
     private int _currentLayer;
     private bool _isUsingExtendedSensorRange = true;
-    
-    [Serializable]
-    public class MovementSettings
-    {
-        public float crouchHeightPercentage = .5f;
-    }
-    
-    [Serializable]
-    public class CameraReferences
-    {
-        public CinemachineCamera cinemachineCamera;
-    }
-    
-    [Serializable]
-    public class AdvancedSettings
-    {
-        [Header("Crouching")]
-        public float crouchSmoothTime = 0.1f;
-        public float standUpCheckRadiusMultiplier = 0.9f;
-        public bool moveCameraOnCrouch = true;
-    }
-    
-    [SerializeField] private MovementSettings _movementSettings = new();
-    [SerializeField] private CameraReferences _cameraReferences = new();
-    [SerializeField] private AdvancedSettings _advancedSettings = new();
-
     private float _standingColliderHeight;
     private float _crouchHeightVelocity;
     private Vector3 _crouchCenterVelocity;
@@ -72,13 +48,11 @@ public class PlayerMover : MonoBehaviour
     private void Setup()
     {
         _tr = transform;
-        _rb = GetComponent<Rigidbody>();
-        _col = GetComponent<CapsuleCollider>();
 
         _rb.freezeRotation = true;
         _rb.useGravity = false;
         
-        _standingCameraHeight = _cameraReferences.cinemachineCamera.transform.localPosition.y;
+        _standingCameraHeight = _cinemachineCamera.transform.localPosition.y;
         _standingColliderHeight = _col.height;
     }
 
@@ -132,33 +106,35 @@ public class PlayerMover : MonoBehaviour
         RecalibrateSensor();
     }
 
-    public void Crouch()
+    public void ToggleCrouch()
     {
+        if (IsCrouching && !CanStand()) return;
+        
         IsCrouching = !IsCrouching;
         
-        float crouchHeight = _standingColliderHeight * _movementSettings.crouchHeightPercentage;
+        float crouchHeight = _standingColliderHeight * _crouchHeightPercentage;
         _colliderHeight = IsCrouching ? crouchHeight : _standingColliderHeight;
         RecalculateColliderDimensions();
 
-        if (!_advancedSettings.moveCameraOnCrouch) return;
+        if (!_moveCameraOnCrouch) return;
         if (_crouchTransition != null) StopCoroutine(_crouchTransition);
         _crouchTransition = StartCoroutine(CrouchCameraTransition(IsCrouching));
     }
     
     private IEnumerator CrouchCameraTransition(bool crouch)
     {
-        float crouchCameraHeight = _standingCameraHeight * _movementSettings.crouchHeightPercentage;
+        float crouchCameraHeight = _standingCameraHeight * _crouchHeightPercentage;
         float targetCameraHeight = crouch ? crouchCameraHeight : _standingCameraHeight;
         
         while (Math.Abs(_col.height - _colliderHeight) > 0.01f)
         {
             float y = Mathf.SmoothDamp(
-                _cameraReferences.cinemachineCamera.transform.localPosition.y, targetCameraHeight,
-                ref _cameraHeightVelocity, _advancedSettings.crouchSmoothTime,
+                _cinemachineCamera.transform.localPosition.y, targetCameraHeight,
+                ref _cameraHeightVelocity, _crouchSmoothTime,
                 Mathf.Infinity, Time.fixedDeltaTime);
 
-            _cameraReferences.cinemachineCamera.transform.localPosition =
-                _cameraReferences.cinemachineCamera.transform.localPosition.With(y: y);
+            _cinemachineCamera.transform.localPosition =
+                _cinemachineCamera.transform.localPosition.With(y: y);
 
             yield return new WaitForEndOfFrame();
         }
@@ -187,6 +163,32 @@ public class PlayerMover : MonoBehaviour
 
         _currentGroundAdjustmentVelocity =
             _tr.up * ((distanceToGo / Time.fixedDeltaTime) * _groundAdjustmentVelocityMultiplier);
+    }
+    
+    private bool CanStand()
+    {
+        Vector3 point1 = _rb.position + _col.center + Vector3.up * (_col.height / 2 - _col.radius);
+        Vector3 point2 = _rb.position + Vector3.up * (_standingColliderHeight - _col.radius);
+
+        float radius = _col.radius * _standUpCheckRadiusMultiplier;
+        float distanceAdjustment = _col.radius - radius;
+
+        Vector3 direction = point2 - point1;
+        float distance = direction.magnitude + distanceAdjustment;
+        direction.Normalize();
+
+
+        RaycastHit[] hits = new RaycastHit[10];
+        int size = Physics.SphereCastNonAlloc(point1, radius, direction, hits, distance);
+        for (int i = 0; i < size; i++)
+        {
+            RaycastHit hit = hits[i];
+            if (hit.collider.CompareTag("Player")) continue;
+            if (hit.collider.attachedRigidbody && !hit.collider.attachedRigidbody.isKinematic) continue;
+            return false;
+        }
+
+        return true;
     }
     
     public Vector3 GetGroundNormal() => _sensor.GetNormal();
