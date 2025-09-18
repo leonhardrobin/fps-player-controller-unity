@@ -1,5 +1,6 @@
 ﻿using System;
 using ImprovedTimers;
+using KBCore.Refs;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,6 +14,12 @@ public class PlayerController : StatefulEntity
     public event Action<Vector3> OnLand = delegate { };
 
     [Header("Movement")]
+    [SerializeField, Self] private PlayerInput _input;
+    [SerializeField, Self] private Transform _tr;
+    [SerializeField, Self] private PlayerMover _mover;
+    [SerializeField, Self] private CeilingDetector _ceilingDetector;
+    [SerializeField, Child] private Transform _cameraTransform;
+    [SerializeField, Child] private CinemachinePanTilt _cinemachinePanTilt;
     [SerializeField] private float _movementSpeed = 4f;
     [SerializeField] private float _sprintMultiplier = 1.35f;
     [SerializeField] private float _sprintSmoothing = 10f;
@@ -25,32 +32,22 @@ public class PlayerController : StatefulEntity
     [SerializeField] private float _slideGravity = 5f;
     [SerializeField] private float _slopeLimit = 30f;
     [SerializeField] private bool _useLocalMomentum;
-    [SerializeField] private Transform _cameraTransform;
-    [SerializeField] private CinemachinePanTilt _cinemachinePanTilt;
 
     private Vector2 Direction => _input.actions["Move"].ReadValue<Vector2>();
     private InputAction Jump => _input.actions["Jump"];
     private InputAction Sprint => _input.actions["Sprint"];
     private InputAction Crouch => _input.actions["Crouch"];
-
-    private CountdownTimer _jumpTimer;
-    private PlayerInput _input;
-    private Transform _tr;
-    private PlayerMover _mover;
-    private CeilingDetector _ceilingDetector;
-
+    
     private Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
-
     private float _currentSprintMultiplier = 1f;
+    
+    private CountdownTimer _jumpTimer;
+
+    private void OnValidate() => this.ValidateRefs();
 
     protected override void Awake()
     {
         base.Awake();
-
-        _tr = transform;
-        _mover = GetComponent<PlayerMover>();
-        _input = GetComponent<PlayerInput>();
-        _ceilingDetector = GetComponent<CeilingDetector>();
 
         _jumpTimer = new CountdownTimer(_jumpDuration);
         SetupStateMachine();

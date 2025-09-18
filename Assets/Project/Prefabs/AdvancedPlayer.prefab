@@ -102,20 +102,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b6ef4424cf14a4ea5ab8efe410b5a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementSpeed: 4
-  sprintMultiplier: 1.35
-  sprintSmoothing: 10
-  airControlRate: 5
-  jumpSpeed: 5
-  jumpDuration: 0.1
-  airFriction: 0.5
-  groundFriction: 100
-  gravity: 30
-  slideGravity: 5
-  slopeLimit: 30
-  useLocalMomentum: 0
-  _cameraTransform: {fileID: 6385295372811702933}
+  _input: {fileID: 717554922679388312}
+  _tr: {fileID: 2613380094263931395}
+  _mover: {fileID: 242983644053297923}
+  _ceilingDetector: {fileID: 4505866951080404938}
+  _cameraTransform: {fileID: 2613380094263931395}
   _cinemachinePanTilt: {fileID: 7076204396587462924}
+  _movementSpeed: 4
+  _sprintMultiplier: 1.35
+  _sprintSmoothing: 10
+  _airControlRate: 5
+  _jumpSpeed: 5
+  _jumpDuration: 0.2
+  _airFriction: 0.5
+  _groundFriction: 100
+  _gravity: 30
+  _slideGravity: 5
+  _slopeLimit: 30
+  _useLocalMomentum: 0
 --- !u!114 &242983644053297923
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -128,12 +132,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3029d19dd6b936479ba412512fcc85d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _rb: {fileID: 7898819850703847793}
+  _tr: {fileID: 2613380094263931395}
+  _col: {fileID: 8286480618013521857}
+  _cinemachineCamera: {fileID: 2694969793589396509}
   _stepHeightRatio: 0.1
   _groundAdjustmentVelocityMultiplier: 0.25
   _colliderHeight: 1.8
   _colliderThickness: 0.6
   _colliderOffset: {x: 0, y: 0.5, z: 0}
-  _isInDebugMode: 1
+  _crouchHeightPercentage: 0.75
+  _crouchSmoothTime: 0.1
+  _standUpCheckRadiusMultiplier: 0.9
+  _moveCameraOnCrouch: 1
 --- !u!114 &4505866951080404938
 MonoBehaviour:
   m_ObjectHideFlags: 0
