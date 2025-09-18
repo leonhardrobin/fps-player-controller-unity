@@ -1,6 +1,5 @@
 ﻿using UnityUtils.StateMachine;
 
-
 public class GroundedState : IState
 {
     private readonly PlayerController _controller;

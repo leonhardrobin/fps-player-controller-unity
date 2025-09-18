@@ -44,6 +44,9 @@ public class PlayerMover : ValidatedMonoBehaviour
         Setup();
         RecalculateColliderDimensions();
     }
+    
+    private void OnCollisionEnter(Collision collision) => KeepWallDistance(collision);
+    private void OnCollisionStay(Collision collision) => KeepWallDistance(collision);
 
     private void Setup()
     {
@@ -155,7 +158,6 @@ public class PlayerMover : ValidatedMonoBehaviour
 
         IsGrounded = _sensor.HasDetectedHit();
         if (!IsGrounded) return;
-
         float distance = _sensor.GetDistance();
         float upperLimit = _colliderHeight * _tr.localScale.x * (1f - _stepHeightRatio) * 0.5f;
         float middle = upperLimit + _colliderHeight * _tr.localScale.x * _stepHeightRatio;
@@ -163,6 +165,23 @@ public class PlayerMover : ValidatedMonoBehaviour
 
         _currentGroundAdjustmentVelocity =
             _tr.up * ((distanceToGo / Time.fixedDeltaTime) * _groundAdjustmentVelocityMultiplier);
+    }
+
+    public void KeepWallDistance(Collision collision)
+    {
+        if (collision.contacts.Length == 0) return;
+
+        float angle = Vector3.Angle(-transform.up, collision.contacts[0].normal);
+
+        if (angle is < 100f and > 80f)
+        {
+            Vector3 adjustment = collision.contacts[0].normal * 0.01f;
+            Vector3 newPos = _rb.position + adjustment;
+            
+            _rb.MovePosition(newPos);
+        }
+        
+        Debug.DrawRay(collision.contacts[0].point, collision.contacts[0].normal, Color.blue, 2f);
     }
     
     private bool CanStand()

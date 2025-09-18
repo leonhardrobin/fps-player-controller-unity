@@ -69,6 +69,10 @@ public class PlayerController : StatefulEntity
         Crouch.started -= HandleCrouch;
         Crouch.canceled -= HandleCrouch;
     }
+    
+    private void OnCollisionEnter(Collision collision) => HandleFallingCollision(collision);
+
+    private void OnCollisionStay(Collision collision) => HandleFallingCollision(collision);
 
     protected override void Update()
     {
@@ -107,7 +111,7 @@ public class PlayerController : StatefulEntity
         At<Func<bool>>(grounded, rising, IsRising);
         At<Func<bool>>(grounded, sliding, () => _mover.IsGrounded && IsGroundTooSteep());
         At<Func<bool>>(grounded, falling, () => !_mover.IsGrounded);
-        At<Func<bool>>(grounded, jumping, () => Jump.WasPressedThisFrame());
+        At<Func<bool>>(grounded, jumping, () => Jump.IsPressed());
 
         At<Func<bool>>(falling, rising, IsRising);
         At<Func<bool>>(falling, grounded, () => _mover.IsGrounded && !IsGroundTooSteep());
@@ -158,6 +162,13 @@ public class PlayerController : StatefulEntity
     {
         if (!context.started) return;
         _mover.ToggleCrouch();
+    }
+    private void HandleFallingCollision(Collision collision)
+    {
+        if (stateMachine.CurrentState is FallingState)
+        {
+            _mover.KeepWallDistance(collision);
+        }
     }
 
     private void HandleMomentum()
